@@ -1,14 +1,18 @@
+%Copyright (C) 2016 Piotr Beben
+
+%This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+%This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+%You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
+  
+
+
+%%
+
 
 
 %Higher values for sensitivity lead to faster convergence, 
 %though poorer fittings and less stability. 
-%Values between 0 and 0.1 seem to work best.  
-
-%%
-
-
-%%
-
+%Values between 0 and 0.1 seem to work best.
 
 sensitivity = 0.1;
 numPts = 100;
