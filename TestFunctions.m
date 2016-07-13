@@ -43,20 +43,34 @@ classdef TestFunctions
             
             switch figureType
                 case 'figure_fit_data'
-                    m = min(cloud(:));
-                    M = max(cloud(:));
+                    m1 = min(cloud(1,:));
+                    M1 = max(cloud(1,:));
+                    m2 = min(cloud(2,:));
+                    M2 = max(cloud(2,:));
                     setAxis = true;
                 case 'figure_fit_complex'
-                    m = min(complexPts(:));
-                    M = max(complexPts(:));
+                    m1 = min(complexPts(1,:));
+                    M1 = max(complexPts(1,:));
+                    m2 = min(complexPts(2,:));
+                    M2 = max(complexPts(2,:));
                     setAxis = true;
+                 case 'figure_fit_all'
+                    m1 = min( min(complexPts(1,:)), min(cloud(1,:)) );
+                    M1 = max( max(complexPts(1,:)), max(cloud(1,:)) );
+                    m2 = min( min(complexPts(2,:)), min(cloud(2,:)) );
+                    M2 = max( max(complexPts(2,:)), max(cloud(2,:)) );
+                    setAxis = true;    
                 otherwise
                     setAxis = false;
             end
             
             if setAxis
-                P = 0.1*(M-m);
-                vaxis = [m-P, M+P, m-P, M+P];
+                P1 = 0.1*(M1-m1);
+                P2 = 0.1*(M2-m2);
+                if P1==0; P1 = 0.01; end;
+                if P2==0; P2 = 0.01; end;
+               
+                vaxis = [m1-P1, M1+P1, m2-P2, M2+P2];
                 axis(vaxis)
             end
             
@@ -85,7 +99,7 @@ classdef TestFunctions
                 
                 if setAxis; axis(vaxis); end
                 
-                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                %title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
                 
                 
                 pause(delay);
@@ -125,22 +139,45 @@ classdef TestFunctions
             [p0,colors] = bdComplex.plot3D(complexPts,[]);
             set(p0,'facealpha',0.2);
             
+            
             switch figureType
                 case 'figure_fit_data'
-                    m = min(cloud(:));
-                    M = max(cloud(:));
+                    m1 = min(cloud(1,:));
+                    M1 = max(cloud(1,:));
+                    m2 = min(cloud(2,:));
+                    M2 = max(cloud(2,:));
+                    m3 = min(cloud(3,:));
+                    M3 = max(cloud(3,:));
                     setAxis = true;
                 case 'figure_fit_complex'
-                    m = min(complexPts(:));
-                    M = max(complexPts(:));
+                    m1 = min(complexPts(1,:));
+                    M1 = max(complexPts(1,:));
+                    m2 = min(complexPts(2,:));
+                    M2 = max(complexPts(2,:));
+                    m3 = min(complexPts(3,:));
+                    M3 = max(complexPts(3,:));
+                    setAxis = true;
+                case 'figure_fit_all'
+                    m1 = min( min(complexPts(1,:)), min(cloud(1,:)) );
+                    M1 = max( max(complexPts(1,:)), max(cloud(1,:)) );
+                    m2 = min( min(complexPts(2,:)), min(cloud(2,:)) );
+                    M2 = max( max(complexPts(2,:)), max(cloud(2,:)) );
+                    m3 = min( min(complexPts(3,:)), min(cloud(3,:)) );
+                    M3 = max( max(complexPts(3,:)), max(cloud(3,:)) );
                     setAxis = true;
                 otherwise
                     setAxis = false;
             end
             
             if setAxis
-                P = 0.1*(M-m);
-                vaxis = [m-P, M+P, m-P, M+P, m-P, M+P];
+                P1 = 0.1*(M1-m1);
+                P2 = 0.1*(M2-m2);
+                P3 = 0.1*(M3-m3);  
+                if P1==0; P1 = 0.01; end;
+                if P2==0; P2 = 0.01; end;
+                if P3==0; P3 = 0.01; end;
+
+                vaxis = [m1-P1, M1+P1, m2-P2, M2+P2, m3-P3, M3+P3];
                 axis(vaxis)
             end
             
@@ -167,7 +204,7 @@ classdef TestFunctions
                 
                 if setAxis; axis(vaxis); end
                 
-                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                %title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
                 
                 pause(delay);
                 

@@ -117,8 +117,8 @@ classdef SMeans
                         SMeans.distSq_pts_pts(points(:,indexedInterior),SMeans.baryc_to_euclid(baryCoords(:,indexedInterior),simplexPts));
                  
                 end
-  
-               
+                
+                
                 
                 
                 if length(indexedInterior)<size(points,2)
@@ -134,19 +134,19 @@ classdef SMeans
                             [ bdBary, bdDist ] = ...
                                 SMeans.distSq_pts_to_simplex(points(:,indexedHalfPlane),simplexPts(:,[1:(i-1),(i+1):end]));
                             
-                                isSmaller = bdDist < distances(indexedHalfPlane);
-                                indexedSmaller = indexedHalfPlane(isSmaller);
-                                distances( indexedSmaller ) = bdDist(isSmaller);
-                                baryCoords( [1:(i-1),(i+1):end], indexedSmaller ) = bdBary(:,isSmaller);
-                                baryCoords( i, indexedSmaller ) = 0;
-                                
-                                leftOverIndices = leftOverIndices(~markedHalfPlane);
-                          
+                            isSmaller = bdDist < distances(indexedHalfPlane);
+                            indexedSmaller = indexedHalfPlane(isSmaller);
+                            distances( indexedSmaller ) = bdDist(isSmaller);
+                            baryCoords( [1:(i-1),(i+1):end], indexedSmaller ) = bdBary(:,isSmaller);
+                            baryCoords( i, indexedSmaller ) = 0;
+                            
+                            leftOverIndices = leftOverIndices(~markedHalfPlane);
+                            
                         end
                         
                     end
                     
-                  
+                    
                     
                 end
                 
@@ -302,7 +302,7 @@ classdef SMeans
       
                 nearestFacet = complex.facets{facetAssign(i)};
                 
-                unmarkedIndices = find( markedPts(nearestFacet)==false );
+                unmarkedIndices = find( markedPts(nearestFacet)==false & baryAssign{i}'>0 );
                 if ~isempty(unmarkedIndices)
                     markedPts( nearestFacet(unmarkedIndices) ) = true;
                 end
