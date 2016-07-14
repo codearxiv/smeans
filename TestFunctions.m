@@ -99,7 +99,7 @@ classdef TestFunctions
                 
                 if setAxis; axis(vaxis); end
                 
-                %title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
                 
                 
                 pause(delay);
@@ -204,7 +204,7 @@ classdef TestFunctions
                 
                 if setAxis; axis(vaxis); end
                 
-                %title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
                 
                 pause(delay);
                 
