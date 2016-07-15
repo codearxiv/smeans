@@ -25,8 +25,6 @@ g=@(x)sin(x{1})./(0.2*x{1}+1)+1;
 
 cloud = PointCloud.build_random(2,numPts,'custom','normal',{f,g},0,10,0.0);
 
-
-
 complex = FacetComplex('grid',subdiv);
 complexPts = PointCloud.build_grid(subdiv,dim,[0;0]);
 
@@ -37,15 +35,15 @@ TestFunctions.test_2D(cloud,complex,complexPts,sensitivity,150,1,0.0,'r',false,'
 %%
 
 sensitivity = 0.1;
-numPts = 200;
-subdiv = 5; 
+numPts = 300;
+subdiv = 9; 
 dim = 0.5; 
 
 f=@(x)cos(x{1})./(0.2*x{1}+1)+1;
 g=@(x)sin(x{1})./(0.2*x{1}+1)+1;
 
 
-cloud = PointCloud.build_random(2,numPts,'custom','normal',{f,g},0,10,0.0);
+cloud = PointCloud.build_random(2,numPts,'custom','normal',{f,g},0,20,0.0);
 
 
 
@@ -154,6 +152,33 @@ complexPts = PointCloud.build_grid([subdiv,subdiv,subdiv],[dim,dim,dim],[0;0;0])
 
 
 TestFunctions.test_3D(cloud,complex,complexPts,sensitivity,40,1,0.0,'r',true,'figure_fit_data')
+
+
+
+%%
+
+sensitivity = 0.1;
+numPts = 800;
+subdiv = 5;
+dim = 1;
+
+f=@(x)cos(x{1}).*sin(x{2});
+g=@(x)sin(x{1}).*sin(x{2});
+h=@(x)cos(x{2});
+l=@(x)x{1};
+
+
+cloud = PointCloud.build_random(3,numPts,'custom','normal',{f,g,h},[-3.14,-3.14],[3.14,3.14],0.02);
+cloud = [cloud, PointCloud.build_random(3,0.2*numPts,'custom','normal',{l,l,l},[-2,-2],[2,2],0.05)];
+
+%complex = FacetComplex('grid',[subdiv,subdiv,subdiv]);
+%complexPts = PointCloud.build_grid([subdiv,subdiv,subdiv],[dim,dim,dim],[0;0;0]);
+subdivs = [10,10,0];
+dims = [1,1,0];
+complex = FacetComplex('grid',subdivs);
+complexPts = PointCloud.build_grid(subdivs,dims,[0;0;-1]);
+
+TestFunctions.test_3D(cloud,complex,complexPts,sensitivity,70,1,0.0,'r',true,'figure_fit_data')
 
 
 
