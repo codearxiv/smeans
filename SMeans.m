@@ -183,19 +183,18 @@ classdef SMeans
             
             leftOverIndices = 1:size(cloud,2);
             leftOverCloud = cloud;
-            
-            numInterior = zeros(1,length(optimalOrder));
-            cloudDimension = size(cloud,1);            
-            
-            
-
-            
+                     
+         
             %For loop below an optimization in case when
             %many points in cloud contained in the complex.
-            %If this is not true, it is overhead.
+            %If this is not true it is overhead.
             %Can be commented out as below (setting newOptimalOrder = optimalOrder)            
             %=================================
             %%{
+            
+            numInterior = zeros(1,length(optimalOrder));
+            cloudDimension = size(cloud,1);
+            
             for j = 1:(length(complex.facets))
                 
                 if size(leftOverCloud,2)>0
