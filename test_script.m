@@ -35,15 +35,15 @@ TestFunctions.test_2D(cloud,complex,complexPts,sensitivity,200,1,0.0,'r',false,'
 %%
 
 sensitivity = 0.1;
-numPts = 300;
-subdiv = 9; 
+numPts = 200;
+subdiv = 5; 
 dim = 0.5; 
 
 f=@(x)cos(x{1})./(0.2*x{1}+1)+1;
 g=@(x)sin(x{1})./(0.2*x{1}+1)+1;
 
 
-cloud = PointCloud.build_random(2,numPts,'custom','normal',{f,g},0,20,0.0);
+cloud = PointCloud.build_random(2,numPts,'custom','normal',{f,g},0,10,0.0);
 
 
 
