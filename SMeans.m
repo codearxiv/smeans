@@ -190,8 +190,7 @@ classdef SMeans
             %If this is not true it is overhead.
             %Can be commented out as below (setting newOptimalOrder = optimalOrder)            
             %=================================
-            %%{
-            
+            %%{           
             numInterior = zeros(1,length(optimalOrder));
             cloudDimension = size(cloud,1);
             
