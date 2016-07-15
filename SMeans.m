@@ -90,7 +90,8 @@ classdef SMeans
                 baryCoordsNorm = simplexPInv * pointsVect;
                 baryNormSum = sum(baryCoordsNorm,1);
                 
-                indices = find( all( baryCoordsNorm >= 0, 1) & baryNormSum <= 1 );
+
+                indices = find( all( baryCoordsNorm >= 0, 1) & baryNormSum <= 1 & SMeans.distSq_pts_pts(pointsVect,simplexVect*baryCoordsNorm) == 0 );
                 
                 baryCoords = [ 1-baryNormSum(indices); baryCoordsNorm(:,indices) ];
             
@@ -186,6 +187,15 @@ classdef SMeans
             numInterior = zeros(1,length(optimalOrder));
             cloudDimension = size(cloud,1);            
             
+            
+
+            
+            %For loop below an optimization in case when
+            %many points in cloud contained in the complex.
+            %If this is not true, it is overhead.
+            %Can be commented out as below (setting newOptimalOrder = optimalOrder)            
+            %=================================
+            %%{
             for j = 1:(length(complex.facets))
                 
                 if size(leftOverCloud,2)>0
@@ -228,11 +238,13 @@ classdef SMeans
                 
             end
             
-            
             [~,orderedIndices] = sort(numInterior,'descend');
-            newOptimalOrder = optimalOrder(orderedIndices);
-           
-      
+            newOptimalOrder = optimalOrder(orderedIndices);         
+            %}
+            %=================================
+
+            %newOptimalOrder = optimalOrder
+            
             
             
             if printProgress; progress = 0; end;
