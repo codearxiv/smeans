@@ -158,95 +158,28 @@ classdef SMeans
                 baryCoords = ones(1,size(points,2),'like',points);
                          
             end
-
+            
         end
         
-
-
+   
         %---------------------------------------------------------------------------------------------
         
-        function [ baryAssign, facetAssign, newOptimalOrder ] = ...
-                partition_nearest( cloud, complex, complexPts, printProgress, optimalOrder )
+        function [ baryAssign, facetAssign ] = ...
+                partition_nearest( cloud, complex, complexPts, printProgress, varargin)
             
-       
+                                
             
             if printProgress; progress = 0; end;
-   
-            
-            
-            if isempty(optimalOrder)
-                optimalOrder = 1:length(complex.facets);
-            end
+       
             
             baryAssign = cell(1,size(cloud,2));
             facetAssign = zeros(1,size(cloud,2),'uint32');
             
             leftOverIndices = 1:size(cloud,2);
-            leftOverCloud = cloud;
-                     
-         
-            %For loop below an optimization in case when
-            %many points in cloud contained in the complex.
-            %If this is not true it is overhead.
-            %Can be commented out as below (setting newOptimalOrder = optimalOrder)            
-            %=================================
-            %%{           
-            numInterior = zeros(1,length(optimalOrder));
-            cloudDimension = size(cloud,1);
             
-            for j = 1:(length(complex.facets))
-                
-                if size(leftOverCloud,2)>0
-                    
-                    i = optimalOrder(j);
-                    
-                    if length(complex.facets{i}) > cloudDimension
-                        
-                        simplexPts = complexPts( :, complex.facets{i} );
-                
-                        [ baryCoords, indexedInterior ] = SMeans.points_inside_simplex( leftOverCloud, simplexPts );
-                        
-                        numInterior(j) = length(indexedInterior);
-                        
-                        if ~isempty(indexedInterior)
-                            baryAssign( leftOverIndices(indexedInterior) ) = num2cell(baryCoords,1);
-                            facetAssign( leftOverIndices(indexedInterior) ) = i;
-                            
-                            markedExterior = true(1,size(leftOverCloud,2));
-                            markedExterior(indexedInterior) = false;
-                            leftOverIndices = leftOverIndices(markedExterior);
-                            leftOverCloud = cloud(:,leftOverIndices);
-                        end
-                        
-                    end
-                    
-                else
-                    break;
-                end
-                %--------------
-                %Print stats
-                if printProgress
-                    currentProgress = 100*i/length(complex.facets);
-                    if (currentProgress - progress) >=5 
-                        sprintf('1st part of current fitting is %0.0f %% complete',currentProgress)
-                        progress = currentProgress;
-                    end
-                end
-                %--------------
-                
-            end
-            
-            [~,orderedIndices] = sort(numInterior,'descend');
-            newOptimalOrder = optimalOrder(orderedIndices);         
-            %}
-            %=================================
 
-            %newOptimalOrder = optimalOrder
             
             
-            
-            if printProgress; progress = 0; end;
-       
             if ~isempty(leftOverIndices)
                 
                 distances = inf(1,size(leftOverIndices,2),'like',cloud);
@@ -266,11 +199,11 @@ classdef SMeans
                     
                     
                     %--------------
-                    %Print stats
+                    %Print progress
                     if printProgress
                         currentProgress = 100*i/length(complex.facets);
                         if (currentProgress - progress) >=5
-                            sprintf('2nd part of current fitting is %0.0f %% complete',currentProgress)
+                            sprintf('1st part of current fitting is %0.0f %% complete',currentProgress)
                             progress = currentProgress;
                         end
                     end
@@ -281,56 +214,116 @@ classdef SMeans
             
             
             
-
         end
         
-        %---------------------------------------------------------------------------------------------
-        
         
         %---------------------------------------------------------------------------------------------
+        %closed == true uses set \bar{N}^\ell_j = {y\in\mc S | y'\in w for some w s.t. v_j\in w}
         
-        function [ complexPts, optimalOrder, varargout ] = ...
-                next_fitting( cloud, complex, complexPts, sensitivity, printProgress, optimalOrder )
+        function [ complexPts, varargout ] = ...
+                next_fitting( cloud, complex, complexPts, sensitivity, closed, printProgress, varargin )
             
-               
+            
+            if printProgress; progress = 0; end;
+            
             s = sensitivity;
             
-            nout = max(nargout,2) - 2;
+            nout = max(nargout,1) - 1;
             getStats = (nout>0);
-
+            dist = 0;
             
-            [ baryAssign, facetAssign, optimalOrder ] = ...
-                SMeans.partition_nearest( cloud, complex, complexPts, printProgress, optimalOrder );
- 
+            
+            if closed
+                if isempty(varargin)
+                    vertexStars = complex.get_vertex_stars(1:size(complexPts,2));
+                else
+                    vertexStars = varargin{1};
+                end
+            end
+            
+            
+            
+            
+            [ baryAssign, facetAssign ] = ...
+                SMeans.partition_nearest( cloud, complex, complexPts, printProgress );
+            
             markedPts = false(1,size(complexPts,2));
             fittedPts = zeros(size(complexPts,1),size(complexPts,2),'like',complexPts);
-            weightCounts = zeros(1,size(complexPts,2));            
-
+            weightCounts = zeros(1,size(complexPts,2));
             
-       
+            
+            
             for i = 1:size(cloud,2)
-      
-                nearestFacet = complex.facets{facetAssign(i)};
                 
-                unmarkedIndices = find( markedPts(nearestFacet)==false & baryAssign{i}'>0 );
-                if ~isempty(unmarkedIndices)
-                    markedPts( nearestFacet(unmarkedIndices) ) = true;
+                nearestFacet = complex.facets{facetAssign(i)};
+                markedNonZero = baryAssign{i}>0.0;
+                bdFace = nearestFacet( markedNonZero );
+                bdBaryAssign = baryAssign{i}( markedNonZero );
+                
+                
+                
+                if closed && length(bdFace)<length(nearestFacet)
+                    
+                    star = vertexStars{bdFace(1)};
+                    
+                    for j = 2:length(bdFace)
+                        star = intersect( star, vertexStars{bdFace(j)} );
+                    end
+                    
+                    starVertices = complex.facets{star(1)};
+                    
+                    for j = 2:length(star)
+                        starVertices = union( starVertices, complex.facets{star(j)} );
+                    end
+                    
+                    [~,~,bdIndices] = intersect(bdFace,starVertices);
+                    baryAssignStar = zeros(length(starVertices),1);
+                    baryAssignStar( bdIndices ) = bdBaryAssign;
+                    
+                else
+                    starVertices = bdFace;
+                    baryAssignStar = bdBaryAssign;
                 end
                 
-        
-                fittedPts(:,nearestFacet) = fittedPts(:,nearestFacet) + ...
-                    complexPts(:,nearestFacet)*diag((1-baryAssign{i})./(1+s)) + cloud(:,i)*((baryAssign{i}+s)./(1+s))';
                 
-                weightCounts(nearestFacet) = weightCounts(nearestFacet) + 1;
                 
-
-
+                unmarkedIndices = find( markedPts(starVertices)==false );
+                if ~isempty(unmarkedIndices)
+                    markedPts( starVertices(unmarkedIndices) ) = true;
+                end
+                
+                
+                fittedPts(:,starVertices) = fittedPts(:,starVertices) + ...
+                    complexPts(:,starVertices)*diag((1-baryAssignStar)./(1+s)) + cloud(:,i)*((baryAssignStar+s)./(1+s))';
+                
+                weightCounts(starVertices) = weightCounts(starVertices) + 1;
+                          
+                %--------------
+                %Get stats
+                if getStats
+                    dist = dist + ...
+                        SMeans.distSq_pt_pts( cloud(:,i), SMeans.baryc_to_euclid(bdBaryAssign,complexPts(:,bdFace)) );
+                end
+                %--------------
+                 
+                
+                %--------------
+                %Print progress
+                if printProgress
+                    currentProgress = 100*i/size(cloud,2);
+                    if (currentProgress - progress) >=5
+                        sprintf('2nd part of current fitting is %0.0f %% complete',currentProgress)
+                        progress = currentProgress;
+                    end
+                end
+                %--------------
+                
             end
       
             
             fittedPts(:,markedPts) = bsxfun( @(x,y) x./y , fittedPts(:,markedPts), weightCounts(markedPts) );
 
-            %--------------
+            %-------------- 
             %Get stats
             if getStats
 
@@ -341,15 +334,13 @@ classdef SMeans
                 else
                     diff = 0;
                 end
-                
-                varargout{1} = [mean(diff),max(diff)];  
-        
-                
-            end
-            
-            
+             
+                varargout{1} = [mean(diff),max(diff),dist];  
+                    
+            end       
             %--------------
   
+            
                 
             complexPts(:,markedPts) = fittedPts(:,markedPts);
             
@@ -372,11 +363,18 @@ classdef SMeans
         
         %---------------------------------------------------------------------------------------------
         
-        function fittedPts = fit( cloud, complex, complexPts, sensitivity, printProgress, stopConditions )
+        function fittedPts = fit( cloud, complex, complexPts, sensitivity, closed, printProgress, stopConditions )
+            
+            
             
             fittedPts = complexPts;
-            optimalOrder = [];
 
+            if closed
+                vertexStars = complex.get_vertex_stars(1:size(complexPts,2));
+            else 
+                vertexStars = [];
+            end
+            
             
             switch stopConditions{1}
                 
@@ -387,8 +385,8 @@ classdef SMeans
 
                     
                     for i = 1:iterations
-                        [fittedPts,optimalOrder] = ...
-                            SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,printProgress,optimalOrder);
+                        [fittedPts] = ...
+                            SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,closed,printProgress,vertexStars);
 
   
                         
@@ -414,12 +412,12 @@ classdef SMeans
                     i= 0;
                     
                     while currentSuccess < maxSuccess 
-                        [fittedPts,optimalOrder,stats]  = ... 
-                            SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,printProgress,optimalOrder);
+                        [fittedPts,stats]  = ... 
+                            SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,closed,printProgress,vertexStars);
                         
                         
                         if printProgress
-                            sprintf('iter #%d complete, avg. change %0.4f, max. change %0.4f,',i,stats(1),stats(2))
+                            sprintf('iter #%d complete, avg. change %0.4f, max. change %0.4f, sum sq. dist. %0.4f',i,stats(1),stats(2),stats(3))
                         end
                         
                         if stats(statsSelect) < change  

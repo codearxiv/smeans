@@ -157,10 +157,13 @@ classdef FacetComplex < handle
         %--------------------------------------------
         function newObj = disjoint_union( obj1, obj2, varargin )
             
-            
-            firstVertex = obj1.get_max_vertices();
-            vertexMap = @(x) x+firstVertex;
-            
+            if isempty(varargin)
+                firstVertex = obj1.get_max_vertices();
+                vertexMap = @(x) x+firstVertex;
+            else
+                vertexMap = varargin{1};
+            end
+        
             newObj = FacetComplex('empty');
             newObj.assign(obj1,'all');
             newObj.insert_facets( obj2.get_vertex_mapped(vertexMap).facets, false );
@@ -243,7 +246,7 @@ classdef FacetComplex < handle
        
         %--------------------------------------------
         
-        function newObj = build_grid( subdivisions )
+        function newObj = build_cube( subdivisions )
             
             newObj = FacetComplex('custom',{1},false);
             
@@ -256,6 +259,35 @@ classdef FacetComplex < handle
        
             
         end
+        
+        
+                
+       
+        %--------------------------------------------
+        
+        function newObj = build_box( subdivisions )
+            
+            if length(subdivisions)>=2
+                
+                bdCap1 = FacetComplex.build_box( subdivisions(1:(end-1)) );
+                
+                corner = FacetComplex('assign',bdCap1,'subcomplex', 1:prod( subdivisions(1:(end-2)) ) );
+                
+                cap1 = FacetComplex.prod_edge(corner,subdivisions(end-1));
+                vertexMap = @(x)( x + subdivisions(end)*cap1.get_max_vertices() );
+                cap2 = get_vertex_mapped( cap1, vertexMap );
+                
+                
+                equator = FacetComplex.prod_edge( bdCap1, subdivisions(end) );
+                
+                newObj = FacetComplex.disjoint_union( FacetComplex.disjoint_union(cap1,cap2,@(x)x), equator, @(x)x );
+                
+            else
+                newObj = FacetComplex('custom',{1,subdivisions(end)+1},false);
+                
+            end
+        end
+        
         %--------------------------------------------
 
 
@@ -277,12 +309,22 @@ classdef FacetComplex < handle
             switch type
                 case 'simplex'
                     obj = FacetComplex.build_simplex( varargin{1} );
+                case 'simplices'
+                    
+                    obj.facets = {};
+                    simplex = FacetComplex.build_simplex( varargin{1} );
+                    for i=1:varargin{2}
+                        obj = FacetComplex.disjoint_union(obj,simplex);
+                    end
+                    
                 case 'points'
                     obj.facets = num2cell(1:varargin{1});
-                case 'grid'
-                    obj = FacetComplex.build_grid( varargin{1} );     
+                case 'cube'
+                    obj = FacetComplex.build_cube( varargin{1} );
+                case 'box'
+                    obj = FacetComplex.build_box( varargin{1} );
                 case 'assign'
-                    obj.assign( varargin{1}, 'all' );
+                    obj.assign( varargin{1}, varargin{2}, varargin{3} );
                 case 'custom'
                     if length(varargin)<2; varargin{2} = false; end;
                     obj.assign_facets( varargin{1}, varargin{2} );      %(faces, checkRedundancy)
@@ -352,13 +394,13 @@ classdef FacetComplex < handle
             if isempty(varargin)
                 outFacets = obj.facets;
             else
-                dimension = varargin{1};    
+                dimension = varargin{1};
                 outFacets = obj.facets( obj.get_facet_vertex_counts()==dimension+1 );
             end
             
             
         end
-
+        
         %--------------------------------------------
         
         function outFacet = get_facet(obj, index)
@@ -366,6 +408,15 @@ classdef FacetComplex < handle
             outFacet = obj.facets{index};
             
         end
+        
+        %--------------------------------------------
+        
+        function marked = marked_facets_having_vertices(obj, vertices)
+            
+            marked = cellfun( @(x)FacetComplex.iscontained(x,vertices), obj.facets );
+            
+        end
+        
         %--------------------------------------------
         
         function num = get_num_facets( obj )
@@ -375,9 +426,13 @@ classdef FacetComplex < handle
         %--------------------------------------------
         
         function maxVertices = get_max_vertices( obj )
-            maxVertices = max( cellfun(@max,obj.facets) );
+            
+            if isempty(obj.facets)
+                maxVertices = 0;
+            else
+                maxVertices = max( cellfun(@max,obj.facets) );                
+            end
         end
-        
         %--------------------------------------------
         
         function numVertices = get_num_vertices( obj )          
@@ -406,9 +461,26 @@ classdef FacetComplex < handle
             
             mappedObj = FacetComplex('empty');
             mappedObj.facets = cellfun( map, obj.facets, 'UniformOutput', false );
-           
+            
             
         end
+        
+        %--------------------------------------------
+        
+        function newObj = get_full_subcomplex( obj, vertices )
+            
+            newObj = FacetComplex('empty');
+            
+            for i = 1:length(obj.facets)
+
+                newObj.insert_facets( intersect(obj.facets{i},vertices), false );
+                
+            end
+            
+            newObj.clear_redundancy(false,false);
+            
+        end
+        
         %--------------------------------------------
         
         function newObj = get_boundary( obj )
@@ -423,6 +495,25 @@ classdef FacetComplex < handle
             end
             
             newObj.clear_redundancy(false,false);
+            
+        end
+        
+        %--------------------------------------------
+        
+        function stars = get_vertex_stars(obj, vertices)
+
+
+            stars = cell(1,length(vertices));
+            
+            for i = 1:length(vertices)
+                
+                for j = 1:length(obj.facets)
+                    if ismember(vertices(i),obj.facets{j})
+                        stars{i}(end+1) = j;               
+                    end
+                end
+                
+            end
             
         end
         
@@ -723,17 +814,21 @@ classdef FacetComplex < handle
             obj.insert_facets( obj2.facets, true, varargin );
         end
         %--------------------------------------------
-        function disjoint_union_with( obj, obj2 )
-                       
-            firstVertex = obj.get_max_vertices();         
-            vertexMap = @(x) x+firstVertex;
+        function disjoint_union_with( obj, obj2, varargin )
             
+            if isempty(varargin)
+                firstVertex = obj.get_max_vertices();
+                vertexMap = @(x) x+firstVertex;
+            else
+                vertexMap = varargin{1};
+            end
+                                  
             obj.insert_facets( obj2.get_vertex_mapped(vertexMap).facets, false );
         end
         %--------------------------------------------
         function join_with( obj, obj2, varargin )
             
-            firstVertex = obj.get_max_vertices();         
+            firstVertex = obj.get_max_vertices();
             vertexMap = @(x) x+firstVertex;
             facets2 = obj2.get_vertex_mapped(vertexMap).facets;
             

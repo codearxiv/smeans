@@ -18,7 +18,8 @@ classdef TestFunctions
         
         %---------------------------------------------------------------------------------------------
         
-        function test_2D(cloud, complex, complexPts, sensitivity, iterations, stepOver, delay, cloudColor, printProgress, varargin)
+        function test_2D(cloud, complex, complexPts, sensitivity, closed, ...
+                iterations, stepOver, delay, cloudColor, printProgress, varargin)
             
             if isempty(varargin)
                 figureType = 'default';
@@ -76,15 +77,24 @@ classdef TestFunctions
             
             set(gca,'FontSize',10);
             pause(1+delay);
+     
+            
+            if closed
+                vertexStars = complex.get_vertex_stars(1:size(complexPts,2));
+            else
+                vertexStars = [];
+            end
             
             
             fittedPts = complexPts;
-            optimalOrder = [];
+            
+            
             
             for i = 1:iterations
                 
+   
                 for j=1:stepOver
-                    [fittedPts,optimalOrder,stats]  = SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,printProgress,optimalOrder);
+                    [fittedPts,stats] = SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,closed,printProgress,vertexStars);   
                 end
                 
                 
@@ -99,7 +109,7 @@ classdef TestFunctions
                 
                 if setAxis; axis(vaxis); end
                 
-                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f, sum sq. dist. %0.4f',i*stepOver,stats(1),stats(2),stats(3)),'FontSize',14)
                 
                 
                 pause(delay);
@@ -109,7 +119,8 @@ classdef TestFunctions
         %---------------------------------------------------------------------------------------------
         
         
-        function test_3D(cloud, complex, complexPts, sensitivity, iterations, stepOver, delay, cloudColor, printProgress, varargin)
+        function test_3D(cloud, complex, complexPts, sensitivity, closed, ...
+                iterations, stepOver, delay, cloudColor, alpha, printProgress, varargin)
             
             if complex.get_dimension() < 3
                 bdComplex = complex;
@@ -137,7 +148,7 @@ classdef TestFunctions
             grid on
             
             [p0,colors] = bdComplex.plot3D(complexPts,[]);
-            set(p0,'facealpha',0.2);
+            set(p0,'facealpha',alpha);
             
             
             switch figureType
@@ -185,31 +196,78 @@ classdef TestFunctions
             pause(1+delay);
             
             
+            if closed
+                vertexStars = complex.get_vertex_stars(1:size(complexPts,2));
+            else 
+                vertexStars = [];
+            end
+            
             fittedPts = complexPts;
-            optimalOrder = [];
+
             
             for i = 1:iterations
+
                 
                 for j=1:stepOver
-                    [fittedPts,optimalOrder,stats]  = SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,printProgress,optimalOrder);
+                    [fittedPts,stats]  = ... 
+                        SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,closed,printProgress,vertexStars);
                 end
                 
                 %%{
                 delete(p0)
                 
                 [p0,~] = bdComplex.plot3D(fittedPts,colors);
-                set(p0,'facealpha',0.2);
+                set(p0,'facealpha',alpha);
                 %}
                 
                 
                 if setAxis; axis(vaxis); end
                 
-                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f,',i*stepOver,stats(1),stats(2)),'FontSize',14)
+                title(sprintf('iter #%d, avg. change %0.4f, max. change %0.4f, sum sq. dist. %0.4f',i*stepOver,stats(1),stats(2),stats(3)),'FontSize',14)
                 
                 pause(delay);
                 
                 
             end
+        end
+        
+        
+        
+        %---------------------------------------------------------------------------------------------
+        
+        
+        function test_high_dimension(cloud, complex, complexPts, sensitivity, closed, iterations, printProgress)
+            
+            
+            if closed
+                vertexStars = complex.get_vertex_stars(1:size(complexPts,2));
+            else
+                vertexStars = [];
+            end
+            
+            fittedPts = complexPts;
+  
+            
+            distSq = zeros(1,iterations); 
+            
+            for i = 1:iterations
+                
+                [fittedPts,stats]  = SMeans.next_fitting(cloud,complex,fittedPts,sensitivity,closed,printProgress,vertexStars);
+                
+                distSq(i) = stats(3);
+                
+                sprintf('iter #%d, avg. change %0.4f, max. change %0.4f, sum sq. dist. %0.4f',i,stats(1),stats(2),stats(3)) 
+              
+                
+            end
+            
+            
+            plot(1:iterations,distSq./size(cloud,2),'-o');
+            xlabel('iterations')
+            ylabel('mean sum squared distances')
+            set(gca,'xtick',0:iterations)
+            hold on
+            
         end
         
         %---------------------------------------------------------------------------------------------

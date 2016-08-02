@@ -57,8 +57,7 @@ classdef PointCloud
             
         end
         
-   
-        
+      
         %---------------------------------------------------------------------------------------------
         
         function points = build_random( dimension, numPoints, type, mode, varargin )
